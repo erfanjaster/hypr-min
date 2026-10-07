@@ -1,0 +1,2 @@
+# hypr-min
+flexible
