@@ -1,5 +1,9 @@
 /* ============================================================================
    waybar — graphite & gold, floating pill bar
+
+   Only modules that have something to say get a pill: the submap indicator,
+   the media info, the idle inhibitor and the update counter are invisible
+   until they matter, so the bar stays as quiet as an empty desktop.
    ========================================================================== */
 
 * {
@@ -15,7 +19,7 @@
     color: #e6e9ef;
 }
 
-/* ---- left: workspaces + window title ---- */
+/* ---- left: workspaces + window title ----------------------------------- */
 
 #workspaces {
     padding: 3px 6px;
@@ -50,23 +54,66 @@
     color: transparent;
 }
 
-/* ---- right: pill cluster ---- */
+/* ---- center: submap mode + now playing (both self-hiding) -------------- */
+
+#submap {
+    background: #e6b450;
+    color: #14161a;
+    font-weight: 700;
+    border-radius: 999px;
+    margin: 5px 2px;
+    padding: 0 14px;
+}
+
+#mpris.playing,
+#mpris.paused {
+    border-radius: 999px;
+    margin: 5px 2px;
+    padding: 0 12px;
+}
+
+#mpris.playing {
+    background: rgba(255, 255, 255, 0.055);
+    color: #e6e9ef;
+}
+
+#mpris.paused {
+    background: rgba(255, 255, 255, 0.03);
+    color: #8b93a1;
+}
+
+/* ---- right: pill cluster ------------------------------------------------ */
 
 #tray,
-#network,
-#pulseaudio,
 #battery,
 #clock,
-#custom-power {
+#language,
+#custom-updates.pending,
+#idle_inhibitor.activated,
+#system,
+#net,
+#session {
     background: rgba(255, 255, 255, 0.055);
     border-radius: 999px;
     margin: 5px 2px;
     padding: 0 12px;
 }
 
-#tray {
-    padding: 0 10px;
+/* modules that live inside a group pill stay flat */
+#cpu,
+#memory,
+#temperature,
+#network,
+#pulseaudio,
+#backlight,
+#custom-keys,
+#custom-power {
+    background: transparent;
+    margin: 0;
+    padding: 0 5px;
 }
+
+#tray { padding: 0 10px; }
 
 #tray > .passive { opacity: 0.75; }
 
@@ -74,19 +121,30 @@
 
 #pulseaudio.muted { color: #d77a61; }
 
-#battery.warning  { color: #e6b450; }
+#cpu.warning,
+#memory.warning,
+#temperature.warning,
+#battery.warning { color: #e6b450; }
+
+#cpu.critical,
+#memory.critical,
+#temperature.critical,
 #battery.critical { color: #d77a61; }
+
+#idle_inhibitor.activated { color: #e6b450; padding: 0 12px; }
+
+#custom-updates.pending { color: #e6b450; }
 
 #clock { color: #e6e9ef; }
 
-#custom-power {
-    color: #e6b450;
-    padding: 0 13px;
-}
+#language { color: #8b93a1; }
 
-#custom-power:hover { background: rgba(230, 180, 80, 0.18); }
+#custom-power { color: #e6b450; }
 
-/* ---- tooltip (clock calendar etc.) ---- */
+#custom-keys:hover,
+#custom-power:hover { background: rgba(230, 180, 80, 0.18); border-radius: 999px; }
+
+/* ---- tooltip (clock calendar etc.) ------------------------------------- */
 
 tooltip {
     background: #1a1d23;

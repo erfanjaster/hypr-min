@@ -5,9 +5,11 @@
     "margin-top": 6,
     "margin-left": 8,
     "margin-right": 8,
+    "spacing": 4,
 
     "modules-left": ["hyprland/workspaces", "hyprland/window"],
-    "modules-right": ["tray", "network", "pulseaudio", "battery", "clock", "custom/power"],
+    "modules-center": ["hyprland/submap", "mpris"],
+    "modules-right": ["group/system", "tray", "group/net", "idle_inhibitor", "battery", "hyprland/language", "clock", "custom/updates", "group/session"],
 
     "hyprland/workspaces": {
         "format": "{name}",
@@ -18,8 +20,62 @@
 
     "hyprland/window": {
         "format": "{}",
-        "max-length": 50,
+        "max-length": 44,
         "separate-outputs": true
+    },
+
+    "hyprland/submap": {
+        "format": "{}",
+        "tooltip": false
+    },
+
+    "hyprland/language": {
+        "format": "{short}",
+        "tooltip": false
+    },
+
+    "mpris": {
+        "format": "{player_icon} {dynamic}",
+        "format-paused": "{status_icon} {dynamic}",
+        "interval": 30,
+        "max-length": 44,
+        "ellipsis": "…",
+        "dynamic-order": ["title", "artist"],
+        "dynamic-importance": ["title", "artist"],
+        "status-icons": { "playing": "󰐊", "paused": "󰏤" },
+        "player-icons": { "default": "", "firefox": "󰈹", "spotify": "󰓇" },
+        "tooltip-format": "{player}: {title} — {artist}",
+        "on-click": "playerctl play-pause",
+        "on-middle-click": "playerctl stop",
+        "on-scroll-up": "playerctl next",
+        "on-scroll-down": "playerctl previous"
+    },
+
+    "group/system": {
+        "orientation": "horizontal",
+        "modules": ["cpu", "memory", "temperature"]
+    },
+
+    "cpu": {
+        "interval": 5,
+        "format": " {usage}%",
+        "tooltip": false,
+        "states": { "warning": 70, "critical": 90 }
+    },
+
+    "memory": {
+        "interval": 10,
+        "format": "󰍛 {percentage}%",
+        "tooltip-format": "{used:0.1f}G used of {total:0.1f}G",
+        "states": { "warning": 75, "critical": 90 }
+    },
+
+    "temperature": {
+        "interval": 10,
+        "warning-threshold": 70,
+        "critical-threshold": 85,
+        "format": " {temperatureC}°C",
+        "tooltip": false
     },
 
     "tray": {
@@ -27,35 +83,66 @@
         "spacing": 10
     },
 
+    "group/net": {
+        "orientation": "horizontal",
+        "modules": ["network", "pulseaudio", "backlight"]
+    },
+
     "network": {
+        "interval": 15,
         "format-wifi": "{icon}",
         "format-ethernet": "󰈀",
         "format-disconnected": "",
         "format-icons": ["󰤟", "󰤢", "󰤥", "󰤨", "󰤩"],
         "tooltip-format": "{essid} · {signalStrength}% · {ipaddr}",
+        "tooltip-format-ethernet": "{ifname} · {ipaddr}",
         "tooltip-format-disconnected": "No network",
-        "on-click": "nm-connection-editor"
+        "on-click": "nm-connection-editor",
+        "on-click-right": "$HOME/.config/hypr/scripts/netmenu.sh"
     },
 
     "pulseaudio": {
         "format": "{icon} {volume}%",
-        "format-muted": "󰖁",
-        "format-icons": ["", "󰖀", "󰕾"],
+        "format-muted": "󰖂",
+        "format-icons": ["󰕿", "󰖀", "󰕾"],
+        "scroll-step": 5,
         "tooltip-format": "{desc} · {volume}%",
-        "on-click": "pavucontrol"
+        "on-click": "pavucontrol",
+        "on-click-right": "$HOME/.config/hypr/scripts/audiomenu.sh",
+        "on-middle-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+    },
+
+    "backlight": {
+        "format": "{icon} {percent}%",
+        "format-icons": ["󰃞", "󰃟", "󰃠"],
+        "interval": 5,
+        "scroll-step": 5,
+        "tooltip": false
+    },
+
+    "idle_inhibitor": {
+        "format": "{icon}",
+        "format-icons": { "activated": "", "deactivated": "" },
+        "start-activated": false,
+        "tooltip": false
     },
 
     "battery": {
+        "interval": 60,
         "format": "{icon} {capacity}%",
         "format-charging": "󰂄 {capacity}%",
+        "format-plugged": "󰂄 {capacity}%",
         "format-full": "󰁹 {capacity}%",
         "format-icons": ["󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+        "full-at": 95,
         "states": { "warning": 25, "critical": 10 },
-        "tooltip-format": "{capacity}% remaining"
+        "tooltip-format": "{capacity}% · {time}"
     },
 
     "clock": {
+        "interval": 60,
         "format": "{:%H:%M}",
+        "format-alt": "{:%a %d %b}",
         "tooltip-format": "<tt><small>{calendar}</small></tt>",
         "calendar": {
             "mode": "month",
@@ -68,9 +155,29 @@
         }
     },
 
+    "custom/updates": {
+        "exec": "$HOME/.config/hypr/scripts/updates.sh check",
+        "interval": 3600,
+        "format": "󰏖 {}",
+        "hide-empty-text": true,
+        "tooltip": false,
+        "on-click": "$HOME/.config/hypr/scripts/updates.sh run"
+    },
+
+    "group/session": {
+        "orientation": "horizontal",
+        "modules": ["custom/keys", "custom/power"]
+    },
+
+    "custom/keys": {
+        "format": "󰌌",
+        "tooltip": false,
+        "on-click": "$HOME/.config/hypr/scripts/keybinds.sh"
+    },
+
     "custom/power": {
         "format": "⏻",
-        "on-click": "$HOME/.config/hypr/scripts/powermenu.sh",
-        "tooltip-format": "Power menu"
+        "tooltip": false,
+        "on-click": "$HOME/.config/hypr/scripts/powermenu.sh"
     }
 }

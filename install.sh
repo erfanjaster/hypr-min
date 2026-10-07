@@ -9,6 +9,10 @@
 #  Safe to re-run: existing configs are backed up, and your personal
 #  ~/.config/hypr/user.lua is preserved across updates.
 #
+#  The bar is fitted to the machine it lands on: modules for hardware you do
+#  not have (battery, backlight, temperature sensor) are removed, and the
+#  keyboard-layout pill only appears when a multi-layout kb_layout is set.
+#
 #  Usage: ./install.sh [--no-packages] [--dry-run] [--help]
 # ============================================================================
 set -euo pipefail
@@ -23,7 +27,7 @@ DRY_RUN=0
 INSTALL_PKGS=1
 
 usage() {
-    sed -n '2,12p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,2\}//'
+    sed -n '2,16p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,2\}//'
     exit 0
 }
 
@@ -67,7 +71,7 @@ PKGS=(
     hyprpolkitagent hyprshutdown
     kitty wl-clipboard cliphist
     grim slurp jq brightnessctl playerctl pavucontrol libnotify
-    network-manager-applet
+    networkmanager network-manager-applet
     xdg-desktop-portal-hyprland xdg-desktop-portal-gtk
     qt6-wayland pipewire wireplumber polkit
     inter-font ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji
@@ -126,10 +130,36 @@ rm -f "$USER_LUA_KEEP"
 # wallpaper: bake the real absolute path into hyprpaper.conf
 run sed -i "s|__WALLPAPER__|$CONFIG_HOME/hypr/assets/wallpaper.png|" "$CONFIG_HOME/hypr/hyprpaper.conf"
 
-# desktops have no battery: drop the waybar battery module (keeps JSON valid)
+# Remove a waybar module everywhere: from the module lists, from group arrays
+# and its own config block. Keeps the JSON valid in every position.
+waybar_drop_module() { # $1 = module name ("battery", "custom/updates", …)
+    local mod="$1" file="$CONFIG_HOME/waybar/config"
+    run sed -i -e "s|\"$mod\", ||g" -e "s|, \"$mod\"||g" -e "s|\[\"$mod\"\]|[]|g" "$file"
+    run sed -i -e "\|^    \"$mod\": {$|,\|^    },$|d" "$file"
+}
+
 if ! ls /sys/class/power_supply/BAT* >/dev/null 2>&1; then
-    info "no battery detected — removing waybar battery module"
-    run sed -i 's/"battery", //' "$CONFIG_HOME/waybar/config"
+    info "no battery detected — dropping the waybar battery module"
+    waybar_drop_module "battery"
+fi
+
+if ! ls /sys/class/backlight/* >/dev/null 2>&1; then
+    info "no backlight control — dropping the waybar backlight module"
+    waybar_drop_module "backlight"
+fi
+
+if ! ls /sys/class/hwmon/hwmon*/temp*_input /sys/class/thermal/thermal_zone*/temp >/dev/null 2>&1; then
+    info "no temperature sensor — dropping the waybar temperature module"
+    waybar_drop_module "temperature"
+fi
+
+# the layout pill is noise on a single-layout keyboard
+# (commented-out examples in user.lua must not count — strip Lua comments first)
+if ! cat "$CONFIG_HOME/hypr/hyprland.lua" "$CONFIG_HOME/hypr/user.lua" 2>/dev/null \
+        | grep -vE '^[[:space:]]*--' \
+        | grep -qE 'kb_layout[[:space:]]*=[[:space:]]*"[^"]+,[^"]+"'; then
+    info "single keyboard layout — dropping the waybar layout module"
+    waybar_drop_module "hyprland/language"
 fi
 
 # --------------------------------------------------------------- summary ----
@@ -144,19 +174,42 @@ cat <<'EOF'
   │  hypr-min installed. Log out, pick "Hyprland" in SDDM.        │
   └──────────────────────────────────────────────────────────────┘
 
-  Essentials
-    SUPER+Return   terminal          SUPER+D        app launcher
-    SUPER+Q        close window      SUPER+SHIFT+Q  kill window
-    SUPER+1..0     workspaces        SUPER+SHIFT+1..0  move window
-    SUPER+arrows/HJKL  focus         SUPER+SHIFT+…  move window
-    SUPER+CTRL+arrows  resize        SUPER+mouse    drag / resize
-    ALT+Tab        cycle windows     SUPER+Tab      prev workspace
-    SUPER+F / SHIFT+F  fullscreen / maximize
-    SUPER+S        scratchpad        SUPER+SHIFT+S  send to scratchpad
-    SUPER+V        clipboard history SUPER+L        lock screen
-    SUPER+X        power menu        SUPER+R        reload config
-    Print          screenshot        SHIFT+Print    region shot
-    ALT+Print      window shot       3-finger swipe switch workspace
+  Everyday
+    SUPER+Return   terminal          SUPER+D / SUPER+Space  app launcher
+    SUPER+W        browser           SUPER+E                file manager
+    SUPER+Q        close window      SUPER+SHIFT+Q          kill window
+    SUPER+1..0     workspaces        SUPER+SHIFT+1..0  send window
+    SUPER+CTRL+1..0  send window and follow
+    SUPER+arrows/HJK   focus         SUPER+SHIFT+…    move window
+    SUPER+CTRL+arrows  resize        SUPER+mouse      drag / resize
+    ALT+Tab        cycle windows     SUPER+Tab        previous workspace
+
+  Windows
+    SUPER+F / SHIFT+F  fullscreen / maximize      SUPER+P  pseudo-tiling
+    SUPER+SHIFT+Space  float        SUPER+C        center floating window
+    SUPER+SHIFT+P      pin to all workspaces
+    SUPER+G            group (tabs) SUPER+SHIFT/CTRL+G  next/prev tab
+    SUPER+\            toggle split SUPER+SHIFT+\  swap split halves
+    SUPER+S            scratchpad   SUPER+SHIFT+S  send window there
+                                   SUPER+SHIFT+Return  new scratch terminal
+
+  Menus & helpers (all on-demand, nothing resident)
+    SUPER+/          every keybind, searchable     SUPER+T  tools submap
+    SUPER+SHIFT+R    resize mode (HJKL, SHIFT=fine, ESC=exit)
+    SUPER+V          clipboard history             SUPER+N  network menu
+    SUPER+A          audio output/input menu       SUPER+I  system info
+    SUPER+U          check updates                 SUPER+SHIFT+U  update now
+    SUPER+B          hide/show the bar             SUPER+M , .  play/pause, prev, next
+    SUPER+SHIFT+I    freeze idle + auto-lock       SUPER+SHIFT+O  screen off
+    SUPER+SHIFT+N    dismiss all notifications     SUPER+X  power menu
+    SUPER+L          lock screen                   SUPER+R  reload config
+
+  Screenshots
+    Print  full      SHIFT+Print  region      ALT+Print  active window
+    SUPER+Print  region → clipboard only      SUPER+SHIFT+Print  screen → clipboard
+
+  Hardware keys work as usual (volume, brightness, media) — also on the lock
+  screen, and SHIFT+ them for fine steps. 3-finger swipe switches workspaces.
 
   Personalize
     ~/.config/hypr/user.lua     binds, monitors, extras (update-safe)

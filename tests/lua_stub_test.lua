@@ -57,8 +57,16 @@ local EVENTS = {
     ["workspace.special_active"] = 1,
 }
 
-local stats = { binds = 0, rules = 0, anims = 0, execs = 0, events = 0 }
+local stats = { binds = 0, rules = 0, anims = 0, execs = 0, events = 0,
+                submaps = 0, timers = 0, callbacks = 0 }
 local seen_binds = {}
+local stats_by_submap = {}
+-- Binds live in a submap scope: the same key may exist in "tools", in "resize"
+-- and in the global map at once (that is exactly what submaps are for).
+local current_submap = "<global>"
+local submaps = {}
+local handlers = {}     -- hl.on() registrations, replayed after the config loads
+local callbacks = {}    -- lua-function bind actions, exercised after load
 
 local function check_keys(keys)
     if type(keys) ~= "string" or keys == "" then
@@ -91,7 +99,7 @@ local function make_dsp(prefix)
             local STRING_ARG = { exec_cmd = 1, exec_raw = 1, submap = 1,
                                  layout = 1, event = 1, global = 1,
                                  ["workspace.toggle_special"] = 1 }
-            return function(args)
+            return function(args, rules)
                 if STRING_ARG[name] then
                     if args ~= nil and type(args) ~= "string" then
                         err("hl.dsp." .. name .. ": expects a string argument")
@@ -99,7 +107,10 @@ local function make_dsp(prefix)
                 elseif args ~= nil and type(args) ~= "table" then
                     err("hl.dsp." .. name .. ": args must be a table")
                 end
-                return { __dsp = name, args = args }
+                if rules ~= nil and type(rules) ~= "table" then
+                    err("hl.dsp." .. name .. ": rules must be a table")
+                end
+                return { __dsp = name, args = args, rules = rules }
             end
         end,
     })
@@ -119,10 +130,15 @@ function hl.bind(keys, action, flags)
             end
         end
     end
-    local norm = keys:gsub("%s+", " "):upper()
+    local norm = keys:gsub("%s+", " "):upper() .. " @" .. current_submap
     if seen_binds[norm] then err("duplicate bind: " .. norm) end
     seen_binds[norm] = true
     stats.binds = stats.binds + 1
+    if type(action) == "function" then
+        callbacks[#callbacks + 1] = { keys = keys, fn = action, scope = current_submap }
+    end
+    if not stats_by_submap[current_submap] then stats_by_submap[current_submap] = 0 end
+    stats_by_submap[current_submap] = stats_by_submap[current_submap] + 1
     return { set_enabled = function() end, unbind = function() end }
 end
 
@@ -154,6 +170,7 @@ function hl.on(ev, fn)
     if not EVENTS[ev] then err("hl.on: unknown event '" .. tostring(ev) .. "'") end
     if type(fn) ~= "function" then err("hl.on: handler must be a function") end
     stats.events = stats.events + 1
+    if type(fn) == "function" then handlers[#handlers + 1] = { ev = ev, fn = fn } end
 end
 
 function hl.exec_cmd(s)
@@ -213,7 +230,41 @@ function hl.workspace_rule(t)
 end
 
 function hl.define_submap(name, fn)
-    if type(fn) == "function" then fn() end
+    if type(name) ~= "string" or name == "" then
+        err("hl.define_submap: name must be a non-empty string")
+    end
+    if type(fn) ~= "function" then
+        err("hl.define_submap '" .. tostring(name) .. "': handler must be a function")
+        return
+    end
+    if submaps[name] then err("submap defined twice: " .. name) end
+    submaps[name] = true
+    stats.submaps = stats.submaps + 1
+    local outer, outer_count = current_submap, stats.binds
+    current_submap = name
+    fn()
+    current_submap = outer
+    -- a submap you cannot leave traps the keyboard
+    if stats.binds == outer_count then
+        err("submap '" .. name .. "' defines no binds")
+    end
+    local escaped = false
+    for k in pairs(seen_binds) do
+        if k:sub(-#(" @" .. name)) == " @" .. name
+           and (k:find("ESCAPE") or k:find("RESET")) then escaped = true end
+    end
+    if not escaped then
+        err("submap '" .. name .. "' has no escape/reset bind (keyboard trap)")
+    end
+end
+
+function hl.timer(fn, opts)
+    if type(fn) ~= "function" then err("hl.timer: handler must be a function") end
+    if type(opts) ~= "table" or type(opts.timeout) ~= "number" then
+        err("hl.timer: needs { timeout = <ms> }")
+    end
+    stats.timers = stats.timers + 1
+    if type(fn) == "function" then fn() end   -- exercise the deferred dispatch
 end
 
 function hl.permission(t) end
@@ -234,12 +285,33 @@ if not ok then
     os.exit(1)
 end
 
+-- Replay the startup path and every lua-function bind: a typo inside a
+-- callback would otherwise only blow up the first time the key is pressed.
+for _, h in ipairs(handlers) do
+    if h.ev == "hyprland.start" then
+        local ok, e = pcall(h.fn)
+        if not ok then err("hl.on('hyprland.start') raised: " .. tostring(e)) end
+    end
+end
+for _, c in ipairs(callbacks) do
+    local ok, e = pcall(c.fn)
+    if not ok then
+        err("bind callback '" .. c.keys .. "' (" .. c.scope .. ") raised: " .. tostring(e))
+    end
+end
+stats.callbacks = #callbacks
+
 if #errors > 0 then
     print("LUA API AUDIT FAILED (" .. #errors .. " problems):")
     for _, e in ipairs(errors) do print("  - " .. e) end
     os.exit(1)
 end
 
+local scopes = {}
+for scope, n in pairs(stats_by_submap) do scopes[#scopes + 1] = scope .. "=" .. n end
+table.sort(scopes)
 print(string.format(
-    "lua stub run: OK — %d binds, %d rules, %d animations, %d autostart execs, %d events",
-    stats.binds, stats.rules, stats.anims, stats.execs, stats.events))
+    "lua stub run: OK — %d binds (%s), %d callbacks exercised, %d rules, "
+        .. "%d animations, %d submaps, %d timers, %d execs, %d events",
+    stats.binds, table.concat(scopes, ", "), stats.callbacks or 0, stats.rules,
+    stats.anims, stats.submaps, stats.timers, stats.execs, stats.events))
