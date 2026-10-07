@@ -1,0 +1,76 @@
+{
+    "layer": "top",
+    "position": "top",
+    "height": 30,
+    "margin-top": 6,
+    "margin-left": 8,
+    "margin-right": 8,
+
+    "modules-left": ["hyprland/workspaces", "hyprland/window"],
+    "modules-right": ["tray", "network", "pulseaudio", "battery", "clock", "custom/power"],
+
+    "hyprland/workspaces": {
+        "format": "{name}",
+        "sort-by": "number",
+        "all-outputs": false,
+        "tooltip-format": "Workspace {name}"
+    },
+
+    "hyprland/window": {
+        "format": "{}",
+        "max-length": 50,
+        "separate-outputs": true
+    },
+
+    "tray": {
+        "icon-size": 16,
+        "spacing": 10
+    },
+
+    "network": {
+        "format-wifi": "{icon}",
+        "format-ethernet": "󰈀",
+        "format-disconnected": "",
+        "format-icons": ["󰤟", "󰤢", "󰤥", "󰤨", "󰤩"],
+        "tooltip-format": "{essid} · {signalStrength}% · {ipaddr}",
+        "tooltip-format-disconnected": "No network",
+        "on-click": "nm-connection-editor"
+    },
+
+    "pulseaudio": {
+        "format": "{icon} {volume}%",
+        "format-muted": "󰖁",
+        "format-icons": ["", "󰖀", "󰕾"],
+        "tooltip-format": "{desc} · {volume}%",
+        "on-click": "pavucontrol"
+    },
+
+    "battery": {
+        "format": "{icon} {capacity}%",
+        "format-charging": "󰂄 {capacity}%",
+        "format-full": "󰁹 {capacity}%",
+        "format-icons": ["󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+        "states": { "warning": 25, "critical": 10 },
+        "tooltip-format": "{capacity}% remaining"
+    },
+
+    "clock": {
+        "format": "{:%H:%M}",
+        "tooltip-format": "<tt><small>{calendar}</small></tt>",
+        "calendar": {
+            "mode": "month",
+            "format": {
+                "months": "<span color='#E6B450'><b>{}</b></span>",
+                "days": "<span color='#E6E9EF'>{}</span>",
+                "today": "<span color='#D77A61'><b>{}</b></span>",
+                "weekdays": "<span color='#8B93A1'>{}</span>"
+            }
+        }
+    },
+
+    "custom/power": {
+        "format": "⏻",
+        "on-click": "$HOME/.config/hypr/scripts/powermenu.sh",
+        "tooltip-format": "Power menu"
+    }
+}

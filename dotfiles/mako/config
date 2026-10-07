@@ -1,0 +1,29 @@
+# ============================================================================
+#  mako — minimal notifications (graphite & gold), top-right, frosted
+# ============================================================================
+
+font = Inter 11
+background-color = #161a21f2
+text-color = #e6e9efff
+border-color = #e6b45055
+border-size = 1
+border-radius = 12
+padding = 12,14
+margin = 10
+width = 380
+max-visible = 5
+default-timeout = 6000
+ignore-timeout = 0
+layer = overlay
+anchor = top-right
+actions = true
+markup = true
+
+[urgency=low]
+border-color = #2e333dff
+text-color = #8b93a1ff
+default-timeout = 4000
+
+[urgency=high]
+border-color = #d77a61aa
+default-timeout = 0

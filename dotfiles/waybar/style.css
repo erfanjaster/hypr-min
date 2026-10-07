@@ -1,0 +1,100 @@
+/* ============================================================================
+   waybar — graphite & gold, floating pill bar
+   ========================================================================== */
+
+* {
+    font-family: "Inter", "JetBrainsMono Nerd Font";
+    font-size: 13px;
+    font-weight: 500;
+}
+
+#waybar {
+    background: rgba(18, 20, 23, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 14px;
+    color: #e6e9ef;
+}
+
+/* ---- left: workspaces + window title ---- */
+
+#workspaces {
+    padding: 3px 6px;
+}
+
+#workspaces button {
+    padding: 2px 10px;
+    margin: 2px 1px;
+    border-radius: 999px;
+    color: #8b93a1;
+    background: transparent;
+    transition: color 120ms, background-color 120ms;
+}
+
+#workspaces button:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e6e9ef;
+}
+
+#workspaces button.active {
+    background: #e6b450;
+    color: #14161a;
+    font-weight: 700;
+}
+
+#window {
+    padding: 0 10px;
+    color: #c7cdd8;
+}
+
+#window.empty {
+    color: transparent;
+}
+
+/* ---- right: pill cluster ---- */
+
+#tray,
+#network,
+#pulseaudio,
+#battery,
+#clock,
+#custom-power {
+    background: rgba(255, 255, 255, 0.055);
+    border-radius: 999px;
+    margin: 5px 2px;
+    padding: 0 12px;
+}
+
+#tray {
+    padding: 0 10px;
+}
+
+#tray > .passive { opacity: 0.75; }
+
+#network.disconnected { color: #8b93a1; }
+
+#pulseaudio.muted { color: #d77a61; }
+
+#battery.warning  { color: #e6b450; }
+#battery.critical { color: #d77a61; }
+
+#clock { color: #e6e9ef; }
+
+#custom-power {
+    color: #e6b450;
+    padding: 0 13px;
+}
+
+#custom-power:hover { background: rgba(230, 180, 80, 0.18); }
+
+/* ---- tooltip (clock calendar etc.) ---- */
+
+tooltip {
+    background: #1a1d23;
+    border: 1px solid rgba(230, 180, 80, 0.35);
+    border-radius: 10px;
+    color: #e6e9ef;
+}
+
+tooltip label {
+    padding: 8px 10px;
+}
