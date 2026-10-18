@@ -43,9 +43,10 @@
 2. **هر پروسهٔ مقیم با `pgrep -x` گارد شده** — کانفیگ ریلود یا نشست دوم،
    دیمن تکراری روی هم تلنبار نمی‌کند.
 3. **جایی که رویداد هست، پولینگ ممنوع.** ماژول‌های `hyprland/*` در نوار با IPC
-   رویدادمحورند؛ `backlight` با udev؛ `mpris` با D-Bus؛ `pulseaudio` با PipeWire.
+   رویدادمحورند؛ `backlight` با udev؛ `mpris` و `network` با D-Bus؛
+   `pulseaudio` با PipeWire — هیچ‌کدام تایمر زمان‌دار ندارند.
    تنها خواندن‌های زمان‌دار: `cpu=5s`, `memory=10s`, `temperature=10s`,
-   `network=15s`, `battery=60s`, `clock=60s` (روی مرز دقیقه هم‌تراز می‌شود،
+   `battery=60s`, `clock=60s` (روی مرز دقیقه هم‌تراز می‌شود،
    یعنی دقیق با یک بیدارشدن در دقیقه) و `custom/updates=3600s`.
    اسکرول روی صدا/نور با خودِ waybar انجام می‌شود (`scroll-step`)، نه با
    spawn کردن `wpctl`/`brightnessctl` به‌ازای هر دندانهٔ اسکرول.
