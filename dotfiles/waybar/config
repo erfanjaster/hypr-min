@@ -7,9 +7,9 @@
     "margin-right": 8,
     "spacing": 4,
 
-    "modules-left": ["hyprland/workspaces", "hyprland/window"],
-    "modules-center": ["hyprland/submap", "mpris"],
-    "modules-right": ["group/system", "tray", "group/net", "idle_inhibitor", "battery", "hyprland/language", "clock", "custom/updates", "group/session"],
+    "modules-left": ["hyprland/workspaces", "group/system"],
+    "modules-center": ["hyprland/window", "hyprland/submap", "mpris"],
+    "modules-right": ["tray", "group/net", "idle_inhibitor", "battery", "hyprland/language", "custom/updates", "clock", "group/session"],
 
     "hyprland/workspaces": {
         "format": "{name}",
@@ -30,7 +30,8 @@
     },
 
     "hyprland/language": {
-        "format": "{short}",
+        "format": "{}",
+        "keyboard-layout-name": "layout-name",
         "tooltip": false
     },
 

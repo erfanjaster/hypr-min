@@ -1,16 +1,27 @@
 #!/usr/bin/env bash
-# updates.sh — tiny Arch/CachyOS update helper.
+# updates.sh — tiny update helper for Arch/CachyOS *and* Debian/Ubuntu.
 #   updates.sh check          bar mode: "N\n\nclass" if updates pending, else
 #                             nothing at all (the waybar module hides itself)
 #   updates.sh check-notify   the same check as a notification (SUPER+U)
 #   updates.sh run            update in a terminal window (SUPER+SHIFT+U)
 #
 # `check` is what the bar runs — once an hour, read-only, ~50 ms.
+# Backend auto-detects: pacman (Arch) → apt-get (Debian). The list of upgradable
+# packages lives in root-owned files under /var/lib/, so both checks shell out
+# to sudo -A (askpass); no pkexec — it would pop a GUI window from the hourly
+# bar poll. On Debian the first sudo askpass prompt can also refresh apt's
+# package index, which makes that one run slower than Arch's pure-local check.
 set -euo pipefail
 
 count() {
     if command -v pacman >/dev/null 2>&1; then
-        { pacman -Quq 2>/dev/null || true; } | grep -c . || true
+        { sudo -A pacman -Quq 2>/dev/null || true; } | grep -c . || true
+    elif command -v apt-get >/dev/null 2>&1; then
+        { sudo -A apt-get upgrade --simulate 2>/dev/null \
+            | awk '/^The following packages will be upgraded:/ { flag = 1; next }
+                   flag && NF == 0 { exit }
+                   flag { n++ }
+                   END { print n + 0 }' || true; }
     else
         echo 0
     fi
@@ -40,8 +51,13 @@ case "${1:-check}" in
             cmd="paru -Syu"
         elif command -v yay >/dev/null 2>&1; then
             cmd="yay -Syu"
-        else
+        elif command -v pacman >/dev/null 2>&1; then
             cmd="sudo pacman -Syu --needed"
+        elif command -v apt-get >/dev/null 2>&1; then
+            cmd="sudo apt update && sudo apt full-upgrade"
+        else
+            echo "updates.sh: no pacman/apt found" >&2
+            exit 1
         fi
         # shellcheck disable=SC2086
         exec "$term" --title "system update" -e bash -c \

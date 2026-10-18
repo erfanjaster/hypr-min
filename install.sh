@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-#  hypr-min installer — CachyOS / Arch Linux
+#  hypr-min installer — CachyOS / Arch Linux  ·  Debian 13 (trixie)
 #
 #  Installs a minimal, future-proof Hyprland desktop (Lua config, 0.56+):
 #    hyprland · waybar · fuzzel · mako · hyprpaper · hyprlock · hypridle
@@ -46,18 +46,31 @@ run()  { if [[ $DRY_RUN -eq 1 ]]; then printf '  [dry-run] %s\n' "$*"; else "$@"
 # ---------------------------------------------------------------- sanity ----
 [[ -d "$DOTFILES/hypr" ]] || { echo "error: $DOTFILES/hypr not found (run from the repo dir)" >&2; exit 1; }
 
+DISTRO=""
 if [[ -r /etc/os-release ]]; then
     # shellcheck disable=SC1091
     . /etc/os-release
-    case "${ID:-} ${ID_LIKE:-}" in
-        *arch*|*cachyos*) ;;
-        *) info "warning: this looks like a non-Arch distro (${ID:-unknown}); continuing anyway" ;;
+    case " ${ID:-} ${ID_LIKE:-} " in
+        *" arch "*|*" cachyos "*) DISTRO="arch" ;;
+        *" debian "*|*" ubuntu "*) DISTRO="debian" ;;
+        *) info "warning: unrecognised distro (${ID:-unknown}); trying pacman, then apt" ;;
     esac
 else
-    info "warning: /etc/os-release missing; continuing anyway"
+    info "warning: /etc/os-release missing; trying pacman, then apt"
 fi
 
-command -v pacman >/dev/null 2>&1 || { echo "error: pacman not found — this installer needs Arch/CachyOS" >&2; exit 1; }
+# package backend: explicit distro wins, otherwise probe the managers
+if [[ -z "$DISTRO" ]]; then
+    if command -v pacman >/dev/null 2>&1; then DISTRO="arch"
+    elif command -v apt-get >/dev/null 2>&1; then DISTRO="debian"
+    fi
+fi
+case "$DISTRO" in
+    arch)   command -v pacman  >/dev/null 2>&1 || { echo "error: pacman not found — this installer needs Arch/CachyOS" >&2; exit 1; } ;;
+    debian) command -v apt-get >/dev/null 2>&1 || { echo "error: apt-get not found — this installer needs Debian 13+" >&2; exit 1; } ;;
+    *)      echo "error: neither pacman nor apt-get found — this installer supports Arch/CachyOS and Debian 13 (trixie)" >&2; exit 1 ;;
+esac
+info "package backend: $DISTRO"
 
 SUDO_CMD=()
 if [[ $EUID -ne 0 ]]; then
@@ -66,7 +79,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 # --------------------------------------------------------------- packages ---
-PKGS=(
+PKGS_ARCH=(
     hyprland waybar fuzzel mako hyprpaper hyprlock hypridle
     hyprpolkitagent hyprshutdown
     kitty wl-clipboard cliphist
@@ -77,19 +90,51 @@ PKGS=(
     inter-font ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji
     adwaita-icon-theme
 )
-# Qt5 wayland support only if Qt5 is already on the system (avoid pulling Qt5)
-if pacman -Qq qt5-base >/dev/null 2>&1; then
-    PKGS+=(qt5-wayland)
+# Debian 13 equivalents; names verified against trixie. There is no
+# hyprshutdown in Debian repos — powermenu.sh falls back to a plain
+# `hyprctl dispatch` logout when the binary is absent.
+PKGS_DEBIAN=(
+    hyprland waybar fuzzel mako-terminal hyprpaper hyprlock hypridle
+    hyprpolkit-agent
+    kitty wl-clipboard cliphist
+    grim slurp jq brightnessctl playerctl pavucontrol libnotify-bin
+    network-manager network-manager-gnome
+    xdg-desktop-portal-hyprland xdg-desktop-portal-gtk
+    qml6-module-qtwayland-compositor pipewire wireplumber polkitd
+    fonts-inter fonts-jetbrains-mono fonts-noto fonts-noto-color-emoji
+    adwaita-icon-theme
+)
+if [[ "$DISTRO" == "debian" ]]; then
+    PKGS=("${PKGS_DEBIAN[@]}")
+else
+    PKGS=("${PKGS_ARCH[@]}")
+    # Qt5 wayland support only if Qt5 is already on the system (avoid pulling Qt5)
+    if pacman -Qq qt5-base >/dev/null 2>&1; then
+        PKGS+=(qt5-wayland)
+    fi
 fi
+
+pkg_installed() { # $1 = package name -> 0 if installed
+    case "$DISTRO" in
+        arch)   pacman -Qq "$1" >/dev/null 2>&1 ;;
+        debian) dpkg -l "$1" 2>/dev/null | grep -q '^ii' ;;
+    esac
+}
 
 if [[ $INSTALL_PKGS -eq 1 ]]; then
     missing=()
     for p in "${PKGS[@]}"; do
-        pacman -Qq "$p" >/dev/null 2>&1 || missing+=("$p")
+        pkg_installed "$p" || missing+=("$p")
     done
     if [[ ${#missing[@]} -gt 0 ]]; then
         info "installing ${#missing[@]} packages: ${missing[*]}"
-        run "${SUDO_CMD[@]}" pacman -S --needed --noconfirm "${missing[@]}"
+        if [[ "$DISTRO" == "debian" ]]; then
+            run "${SUDO_CMD[@]}" env DEBIAN_FRONTEND=noninteractive apt-get update
+            run "${SUDO_CMD[@]}" env DEBIAN_FRONTEND=noninteractive \
+                apt-get install -y --no-install-recommends "${missing[@]}"
+        else
+            run "${SUDO_CMD[@]}" pacman -S --needed --noconfirm "${missing[@]}"
+        fi
     else
         info "all packages already installed"
     fi
@@ -170,9 +215,9 @@ fi
 
 cat <<'EOF'
 
-  ┌──────────────────────────────────────────────────────────────┐
-  │  hypr-min installed. Log out, pick "Hyprland" in SDDM.        │
-  └──────────────────────────────────────────────────────────────┘
+  ┌────────────────────────────────────────────────────────┐
+  │  hypr-min installed. Log out, pick "Hyprland" there.   │
+  └────────────────────────────────────────────────────────┘
 
   Everyday
     SUPER+Return   terminal          SUPER+D / SUPER+Space  app launcher
