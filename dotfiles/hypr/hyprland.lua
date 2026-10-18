@@ -147,6 +147,8 @@ hl.config({
     input = {
         kb_layout    = "us",
         follow_mouse = 1,
+        accel_profile = "flat",   -- no pointer acceleration: cheapest input path,
+                                  -- and muscle memory survives every update
         repeat_delay = 400,
         repeat_rate  = 40,
         numlock_by_default = true,
@@ -173,6 +175,21 @@ hl.config({
         -- interactive move/resize without animation: fewer frames, no rubber-band
         animate_manual_resizes        = false,
         animate_mouse_windowdragging  = false,
+        vrr                             = 1,   -- adaptive sync when the panel
+                                               -- supports it: zero tearing at
+                                               -- ZERO extra GPU cost; ignored
+                                               -- on panels without VRR. To
+                                               -- disable: user.lua →
+                                               -- hl.config({ misc = { vrr = 0 } })
+    },
+
+    render = {
+        transaction_timeout = 0,      -- never stall a frame waiting on a slow
+                                      -- client; also kills freeze-hangs from
+                                      -- misbehaving XWayland windows
+        direct_scanout = true,        -- fullscreen opaque content (video, games)
+                                      -- bypasses the compositor entirely: less
+                                      -- GPU work, less latency
     },
 
     dwindle = {

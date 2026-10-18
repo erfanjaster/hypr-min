@@ -69,7 +69,10 @@
 --------------------------------------------------------------------------------
 -- Comfort switches (uncomment what you like)
 --------------------------------------------------------------------------------
--- hl.config({ misc  = { vrr = 1 } })                        -- adaptive sync
+-- hl.config({ misc  = { vrr = 1 } })               -- adaptive sync (already
+                                                    -- ON by default in
+                                                    -- hyprland.lua; use vrr = 0
+                                                    -- here to force it off)
 -- hl.config({ misc  = { enable_swallow = false } })         -- no swallowing
 -- hl.config({ input = { touchpad = { natural_scroll = true } } })
 -- hl.config({ decoration = { blur = { enabled = false } } })-- absolute min GPU

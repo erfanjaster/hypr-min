@@ -37,7 +37,6 @@
     "mpris": {
         "format": "{player_icon} {dynamic}",
         "format-paused": "{status_icon} {dynamic}",
-        "interval": 30,
         "max-length": 44,
         "ellipsis": "…",
         "dynamic-order": ["title", "artist"],
@@ -89,7 +88,6 @@
     },
 
     "network": {
-        "interval": 15,
         "format-wifi": "{icon}",
         "format-ethernet": "󰈀",
         "format-disconnected": "",
@@ -115,7 +113,6 @@
     "backlight": {
         "format": "{icon} {percent}%",
         "format-icons": ["󰃞", "󰃟", "󰃠"],
-        "interval": 5,
         "scroll-step": 5,
         "tooltip": false
     },

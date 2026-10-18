@@ -1,36 +1,36 @@
-# hypr-min test results — 2026-10-07T12:39Z
+# hypr-min test results — 2026-10-18T21:38Z
 ## TEST 1 — shell static analysis (bash -n + shellcheck)
 - ✔ bash -n install.sh
-- ✔ shellcheck install.sh
+- ✘ shellcheck install.sh (see log below)
 - ✔ bash -n app.sh
-- ✔ shellcheck app.sh
+- ✘ shellcheck app.sh (see log below)
 - ✔ bash -n audiomenu.sh
-- ✔ shellcheck audiomenu.sh
+- ✘ shellcheck audiomenu.sh (see log below)
 - ✔ bash -n clipboard.sh
-- ✔ shellcheck clipboard.sh
+- ✘ shellcheck clipboard.sh (see log below)
 - ✔ bash -n idle.sh
-- ✔ shellcheck idle.sh
+- ✘ shellcheck idle.sh (see log below)
 - ✔ bash -n keybinds.sh
-- ✔ shellcheck keybinds.sh
+- ✘ shellcheck keybinds.sh (see log below)
 - ✔ bash -n netmenu.sh
-- ✔ shellcheck netmenu.sh
+- ✘ shellcheck netmenu.sh (see log below)
 - ✔ bash -n powermenu.sh
-- ✔ shellcheck powermenu.sh
+- ✘ shellcheck powermenu.sh (see log below)
 - ✔ bash -n screenshot.sh
-- ✔ shellcheck screenshot.sh
+- ✘ shellcheck screenshot.sh (see log below)
 - ✔ bash -n sysinfo.sh
-- ✔ shellcheck sysinfo.sh
+- ✘ shellcheck sysinfo.sh (see log below)
 - ✔ bash -n updates.sh
-- ✔ shellcheck updates.sh
+- ✘ shellcheck updates.sh (see log below)
 ## TEST 2 — Lua config: syntax parse + API surface audit
-- ✔ luac -p hyprland.lua
-- ✔ luac -p user.lua
-- ✔ execute hyprland.lua against stub hl API
-- ✔ execute user.lua against stub hl API
+- ✘ luac -p hyprland.lua (see log below)
+- ✘ luac -p user.lua (see log below)
+- ✘ execute hyprland.lua against stub hl API (see log below)
+- ✘ execute user.lua against stub hl API (see log below)
 - ✔ user.lua require is pcall-protected
-- ✔ registers >=100 binds (keymap not accidentally gutted)
+- ✘ registers >=100 binds (keymap not accidentally gutted) (see log below)
 - ✔ stub catches duplicate bind + submap trap + bad callback + bad flag
-- ✔ stub reports all five problems
+- ✘ stub reports all five problems (see log below)
 ## TEST 3 — hyprlang configs: schema, dpms syntax, no legacy dispatchers
 - ✔ hyprlang lint
 - ✔ no legacy 'hyprctl dispatch <word>' anywhere
@@ -38,7 +38,7 @@
 ## TEST 4 — waybar JSON+CSS, fuzzel.ini, mako config validation
 - ✔ misc lint
 ## TEST 5 — keybind hygiene (descriptions, submaps, scripts, README in sync)
-- ✔ bind lint
+- ✘ bind lint (see log below)
 ## TEST 6 — resource budget (resident processes, blur, polling, no busy loops)
 - ✔ budget lint
 ## TEST 7 — every package in install.sh exists in the official Arch repos
@@ -108,4 +108,4 @@
 - ✔ no stray placeholders outside hyprpaper template
 - ✔ every binary referenced by configs/scripts is installed by install.sh
 
-**RESULT: 98 passed, 0 failed, 0 skipped**
+**RESULT: 80 passed, 18 failed, 0 skipped**
